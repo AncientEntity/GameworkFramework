@@ -1,17 +1,13 @@
 import pygame, math, os, time
-from pygame.locals import *
+from .datatypes import *
 #Vars
 metaKeySeparator = "|"
 deltaTime = 1
 lastTime = time.time()
 physicsObjects = []
+camera = Vector(0,0)
 
 #Shizbiz
-
-class Vector:
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
 
 class PhysicsObject:
     def __init__(self,posRef,xSize,ySize):
@@ -117,7 +113,7 @@ class Entity:
         self.physics.rect.width = self.xSize
         self.physics.rect.height = self.ySize
     def Center(self):
-        return Vector(self.x + int(self.xSize/2),self.y + int(self.ySize/2))
+        return Vector(self.position.x + (self.xSize/2.0),self.position.y + (self.ySize/2.0))
     def SetMeta(self,key,value):
         keys = key.split(metaKeySeparator) #Find subkeys
         lastDict = self.meta
@@ -148,9 +144,15 @@ class Entity:
     def SetupPhysics(self):
         self.physics = PhysicsObject(self.position,self.xSize,self.ySize)
     def Draw(self,surface : pygame.Surface):
-        surface.blit(self.sprite,(self.position.x,self.position.y))
+        renderPos = Vector(self.position.x-int(camera.x),self.position.y-int(camera.y))
+        if(renderPos.x < -self.sprite.get_width() or renderPos.x > surface.get_width()+self.sprite.get_width()):
+            return
+        if(renderPos.y < -self.sprite.get_height() or renderPos.y > surface.get_height()+self.sprite.get_height()):
+            return
+        surface.blit(self.sprite,(renderPos.x,renderPos.y))
     def GetCollisionData(self):
         return self.physics.collisionData
+
 
 #Helper Methods
 def CheckCollision(me,others : list):

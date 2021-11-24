@@ -1,5 +1,7 @@
-import pygame
-from engine import *
+import pygame.time
+
+from gamework.engine import *
+from gamework.datatypes import *
 
 pygame.init()
 screen = pygame.display.set_mode((800,600))
@@ -7,7 +9,7 @@ display = pygame.Surface((400,300))
 entities = []
 
 for y in range(10):
-    for x in range(14):
+    for x in range(-1000,1000):
         if(y == 8 or (y == 7 and x > 6)):
             Ent = Entity(x * 16, y * 16, 16, 16)
             Ent.sprite = pygame.image.load("ground.png")
@@ -38,8 +40,9 @@ while True:
         player.physics.velocity.x = 25
     else:
         player.physics.velocity.x = 0
-
-    player.physics.velocity.y += 2
+    player.physics.velocity.y += 2 * deltaTime
+    #camera.x = player.position.x - 100
+    #camera.y = player.position.y - 75
     for obj in entities:
         obj : Entity
         obj.physics.Update()
