@@ -18,6 +18,8 @@ class PhysicsObject:
         self.position = posRef
         self._xSize = xSize
         self._ySize = ySize
+        self._name = "Unnamed Object"
+        self._tag = "Untagged"
         self.velocity = Vector(0,0)
         self.rect = pygame.Rect(posRef.x,posRef.y,xSize,ySize)
         self.collisionData = {'top':False,'bottom':False,'left':False,'right':False,'meta':{}}
@@ -34,46 +36,48 @@ class PhysicsObject:
         return self.Rect().colliderect(other.rect)
     def Update(self):
         #collisionData = {'top':False,'bottom':False,'left':False,'right':False,'meta':{}}
+        self.RawMove(self.velocity)
+        return self.collisionData
+    def RawMove(self,displacement):
         self.collisionData['meta'] = {}
         self.collisionData['left'] = False
         self.collisionData['right'] = False
-        #X
-        if(self.velocity.x != 0):
-            self.position.x += self.velocity.x * deltaTime
+        # X
+        if (displacement.x != 0):
+            self.position.x += displacement.x * deltaTime
             rect = self.Rect()
-            collisions = CheckCollision(self,physicsObjects)
+            collisions = CheckCollision(self, physicsObjects)
             for other in collisions:
-                if self.velocity.x > 0:
+                if displacement.x > 0:
                     rect.right = other.rect.left
                     self.collisionData['right'] = True
                     self.velocity.x = 0
-                elif self.velocity.x < 0:
+                elif displacement.x < 0:
                     rect.left = other.rect.right
                     self.collisionData['left'] = True
                     self.velocity.x = 0
                 self.position.x = rect.x
-        #Y
-        if(self.velocity.y != 0):
-            self.position.y += self.velocity.y * deltaTime
+        # Y
+        if (displacement.y != 0):
+            self.position.y += displacement.y * deltaTime
             rect = self.Rect()
             collisions = CheckCollision(self, physicsObjects)
 
-            if(self.velocity.y < 0):
+            if (displacement.y < 0):
                 self.collisionData['bottom'] = False
             else:
                 self.collisionData['top'] = False
 
             for other in collisions:
-                if self.velocity.y > 0:
+                if displacement.y > 0:
                     rect.bottom = other.rect.top
                     self.collisionData['bottom'] = True
                     self.velocity.y = 0
-                elif self.velocity.y < 0:
+                elif displacement.y < 0:
                     rect.top = other.rect.bottom
                     self.collisionData['top'] = True
                     self.velocity.y = 0
                 self.position.y = rect.y
-        return self.collisionData
     def AddForce(self,x,y):
         self.velocity.x += x
         self.velocity.y += y
@@ -82,7 +86,8 @@ class PhysicsObject:
 
 class Entity:
     def __init__(self,x,y,xSize,ySize,setupPhysics=True):
-        self.name = "Unnamed Entity"
+        self.name = "Unnamed Object"
+        self.tag = "Untagged"
         self.position = Vector(x,y)
         self.xSize = xSize
         self.ySize = ySize
@@ -92,6 +97,12 @@ class Entity:
         self.physics : PhysicsObject = None
         if(setupPhysics):
             self.SetupPhysics()
+    def SetName(self,newName):
+        self.name = newName
+        self.physics._name = newName
+    def SetTag(self,newTag):
+        self.tag = newTag
+        self.physics._tag = newTag
     def Translate(self,x,y):
         self.position.x += x
         self.position.y += y
