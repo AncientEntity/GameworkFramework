@@ -20,6 +20,7 @@ class PhysicsObject:
         self._ySize = ySize
         self.velocity = Vector(0,0)
         self.rect = pygame.Rect(posRef.x,posRef.y,xSize,ySize)
+        self.collisionData = {'top':False,'bottom':False,'left':False,'right':False,'meta':{}}
         physicsObjects.append(self)
     def GetSize(self):
         return Vector(self._xSize,self._ySize)
@@ -28,34 +29,51 @@ class PhysicsObject:
         self.rect.y = self.position.y
         return self.rect
     def CheckCollision(self,other):
+        if(other == self):
+            return False
         return self.Rect().colliderect(other.rect)
     def Update(self):
-        collisionData = {'top':False,'bottom':False,'left':False,'right':False,'meta':{}}
+        #collisionData = {'top':False,'bottom':False,'left':False,'right':False,'meta':{}}
+        self.collisionData['meta'] = {}
+        self.collisionData['left'] = False
+        self.collisionData['right'] = False
         #X
-        self.position.x += self.velocity.x * deltaTime
-        rect = self.Rect()
-        collisions = CheckCollision(self,physicsObjects)
-        for other in collisions:
-            if self.velocity.x > 0:
-                rect.right = other.rect.left
-                collisionData['right'] = True
-            elif self.velocity.x < 0:
-                rect.left = other.rect.right
-                collisionData['left'] = True
-            self.position.x = rect.x
+        if(self.velocity.x != 0):
+            self.position.x += self.velocity.x * deltaTime
+            rect = self.Rect()
+            collisions = CheckCollision(self,physicsObjects)
+            for other in collisions:
+                if self.velocity.x > 0:
+                    rect.right = other.rect.left
+                    self.collisionData['right'] = True
+                    self.velocity.x = 0
+                elif self.velocity.x < 0:
+                    rect.left = other.rect.right
+                    self.collisionData['left'] = True
+                    self.velocity.x = 0
+                self.position.x = rect.x
         #Y
-        self.position.y += self.velocity.y * deltaTime
-        rect = self.Rect()
-        collisions = CheckCollision(self, physicsObjects)
-        for other in collisions:
-            if self.velocity.y > 0:
-                rect.bottom = other.rect.top
-                collisionData['bottom'] = True
-            elif self.velocity.y < 0:
-                rect.top = other.rect.bottom
-                collisionData['top'] = True
-            self.position.y = rect.y
-        return collisionData
+        if(self.velocity.y != 0):
+            self.position.y += self.velocity.y * deltaTime
+            rect = self.Rect()
+            collisions = CheckCollision(self, physicsObjects)
+
+            if(self.velocity.y < 0):
+                self.collisionData['bottom'] = False
+            else:
+                self.collisionData['top'] = False
+
+            for other in collisions:
+                if self.velocity.y > 0:
+                    rect.bottom = other.rect.top
+                    self.collisionData['bottom'] = True
+                    self.velocity.y = 0
+                elif self.velocity.y < 0:
+                    rect.top = other.rect.bottom
+                    self.collisionData['top'] = True
+                    self.velocity.y = 0
+                self.position.y = rect.y
+        return self.collisionData
     def AddForce(self,x,y):
         self.velocity.x += x
         self.velocity.y += y
@@ -63,7 +81,7 @@ class PhysicsObject:
         self.velocity = Vector(0,0)
 
 class Entity:
-    def __init__(self,x,y,xSize,ySize):
+    def __init__(self,x,y,xSize,ySize,setupPhysics=True):
         self.name = "Unnamed Entity"
         self.position = Vector(x,y)
         self.xSize = xSize
@@ -72,6 +90,8 @@ class Entity:
         self.sprite = None
         self.meta = {}
         self.physics : PhysicsObject = None
+        if(setupPhysics):
+            self.SetupPhysics()
     def Translate(self,x,y):
         self.position.x += x
         self.position.y += y
@@ -80,6 +100,11 @@ class Entity:
         self.position.y = y
     def Rect(self):
         return pygame.Rect(self.x,self.y,self.xSize,self.ySize)
+    def StretchToSprite(self):
+        self.xSize = self.sprite.get_width()
+        self.ySize = self.sprite.get_height()
+        self.physics.rect.width = self.xSize
+        self.physics.rect.height = self.ySize
     def Center(self):
         return Vector(self.x + int(self.xSize/2),self.y + int(self.ySize/2))
     def SetMeta(self,key,value):
@@ -113,6 +138,8 @@ class Entity:
         self.physics = PhysicsObject(self.position,self.xSize,self.ySize)
     def Draw(self,surface : pygame.Surface):
         surface.blit(self.sprite,(self.position.x,self.position.y))
+    def GetCollisionData(self):
+        return self.physics.collisionData
 
 #Helper Methods
 def CheckCollision(me,others : list):
